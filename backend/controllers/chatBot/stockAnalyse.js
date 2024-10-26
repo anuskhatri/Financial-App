@@ -8,7 +8,11 @@ const stockAnalyse = async (req, res) => {
         const { id } = getUserid(userauth); // Ensure getUserid returns an object with id
         const { stockId } = req.params;
         const response=await stockAnalysePrompt(id,stockId)
-        res.status(200).send(response);
+        // console.log(response)
+        if (response==null) {
+            res.status(404).send("Not found data");
+        }
+        res.send(response)
     } catch (error) {
         console.error(error);
         res.status(500).send("Try again later");

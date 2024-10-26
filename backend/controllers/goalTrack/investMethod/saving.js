@@ -20,8 +20,8 @@ const   saveMethod = async (req, res) => {
 
         const goalPlan = await GoalPlan(goal_amount, time_frame, month_income, loan_data, transaction_data, balance_data)
         const gptRes=await getFinancialAdviceOnSavingGoal(goalPlan)
-        
-        res.send({...goalPlan,message:gptRes.message})
+        console.log(gptRes)
+        res.send({...goalPlan,message:gptRes})
     } catch (error) {
         console.error("Error in saveMethod:", error)
         return res.status(500).send({ error: "An error occurred while processing your request." })

@@ -24,7 +24,7 @@ const stockAnalysePrompt = async (userId,stockId) => {
         const stockPriceData = await getStockPrice([stockData.symbol_name]);
         const stockNews = await getStockNews([stockData.stock_name])
         if (!stockPriceData || !stockPriceData[stockData.symbol_name]) {
-            return "Current stock price not available";
+            return null;
         }
 
         const currentPrice = stockPriceData[stockData.symbol_name];
@@ -43,7 +43,7 @@ const stockAnalysePrompt = async (userId,stockId) => {
         };
         const gptResponse = await getFinancialAdvice(`Given the following recent news articles about the stock, determine the overall market sentiment as either positive or negative.
                                                      Additionally, assess the potential impact of this news on the stocks recent price movement. 
-                                                    Provide a brief summary explaining your assessment in simple language.`,
+                                                    Provide a summary explaining your assessment in simple language.`,
                                                     JSON.stringify(stockCurrentValue))
         redis.set(`stockAnalyse:${stockId}`,JSON.stringify(gptResponse),'EX',1800)
         return gptResponse
