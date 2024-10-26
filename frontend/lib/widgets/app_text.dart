@@ -1,7 +1,4 @@
-import 'package:bobhack/constants.dart';
-import 'package:bobhack/controllers/language_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class AppText extends StatelessWidget {
   const AppText({

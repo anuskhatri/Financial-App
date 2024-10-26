@@ -4,7 +4,7 @@ import 'package:bobhack/constants.dart';
 import 'package:bobhack/controllers/investment_controller.dart';
 import 'package:bobhack/controllers/services.dart';
 import 'package:bobhack/pages/home/home.dart';
-import 'package:bobhack/pages/login/bob_login.dart';
+import 'package:bobhack/pages/login/mh_login.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';

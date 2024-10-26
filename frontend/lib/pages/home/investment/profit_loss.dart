@@ -44,7 +44,10 @@ class PAndL extends StatelessWidget {
                   items: ['Mutual Fund', 'Stock'].map((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
-                      child: AppText(text: value, color: subTextColor,),
+                      child: AppText(
+                        text: value,
+                        color: subTextColor,
+                      ),
                     );
                   }).toList(),
                   onChanged: (newValue) {
@@ -102,22 +105,42 @@ class PAndL extends StatelessWidget {
                   }),
                   const SizedBox(width: 5),
                   Obx(
-                    () => investmentController.mutualFundInvestment[
-                                'total_invested_amount'] >=
-                            investmentController
-                                .mutualFundInvestment['total_current_value']
-                        ? const Icon(
-                            Icons.arrow_drop_down_sharp,
-                            color: Colors.red,
-                            size: 20,
-                            weight: 100,
-                          )
-                        : const Icon(
-                            Icons.arrow_drop_up_sharp,
-                            color: Colors.green,
-                            size: 20,
-                            weight: 100,
-                          ),
+                    () {
+                      return investmentController.selectedInvestment.value ==
+                              "Mutual Fund"
+                          ? (investmentController.mutualFundInvestment[
+                                      'total_current_value'] <
+                                  investmentController.mutualFundInvestment[
+                                      'total_invested_amount']
+                              ? const Icon(
+                                  Icons.arrow_drop_down_sharp,
+                                  color: Colors.red,
+                                  size: 20,
+                                )
+                              : const Icon(
+                                  Icons.arrow_drop_up_sharp,
+                                  color: Colors.green,
+                                  size: 20,
+                                ))
+                          : investmentController.selectedInvestment.value ==
+                                  "Stocks"
+                              ? (investmentController.stockFundInvestment[
+                                          'total_current_value'] <
+                                      investmentController.stockFundInvestment[
+                                          'total_invested_amount']
+                                  ? const Icon(
+                                      Icons.arrow_drop_down_sharp,
+                                      color: Colors.red,
+                                      size: 20,
+                                    )
+                                  : const Icon(
+                                      Icons.arrow_drop_up_sharp,
+                                      color: Colors.green,
+                                      size: 20,
+                                    ))
+                              : const SizedBox
+                                  .shrink();
+                    },
                   )
                 ],
               ),

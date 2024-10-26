@@ -1,5 +1,6 @@
 import 'package:bobhack/constants.dart';
 import 'package:bobhack/controllers/stocks_controller.dart';
+import 'package:bobhack/pages/home/dashboard/charts/linechart.dart';
 import 'package:bobhack/widgets/app_text.dart';
 import 'package:bobhack/widgets/stocks_tile.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ class StocksInvestment extends StatelessWidget {
             onTap: () {
               stocksController.fetchInvestedStockNews(
                   stocks.stockName, stocks.id);
+              stocksController.fetchStockGraphDetails(stocks.stockName);
               showDialog(
                   context: context,
                   builder: (BuildContext context) {
@@ -67,33 +69,55 @@ class StocksInvestment extends StatelessWidget {
                                         child: PageView(
                                           controller: _pageController,
                                           children: [
-                                            Column(
-                                              children: [
-                                                Obx(
-                                                  () => AppText(
-                                                      text: stocksController
-                                                                  .stockNews[
-                                                              "title"] ??
-                                                          '',
-                                                      fontSize: 17,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: Colors.white),
+                                            SingleChildScrollView(
+                                              child: SizedBox(
+                                                height: 500,
+                                                width: double.infinity,
+                                                child: Column(
+                                                  children: [
+                                                    Obx(
+                                                      () => AppText(
+                                                          text: stocksController
+                                                                      .stockNews[
+                                                                  "title"] ??
+                                                              '',
+                                                          fontSize: 17,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.white),
+                                                    ),
+                                                    const SizedBox(
+                                                      height: 20,
+                                                    ),
+                                                    Obx(
+                                                      () => AppText(
+                                                          text: stocksController
+                                                                      .stockNews[
+                                                                  "description"] ??
+                                                              '',
+                                                          fontSize: 15,
+                                                          color: Colors.white,
+                                                          height: 1.5),
+                                                    ),
+                                                    const Spacer(),
+                                                    SizedBox(
+                                                      height: 150,
+                                                      width: double.infinity,
+                                                      child: Obx(() {
+                                                        return stocksController
+                                                                .isLoading.value
+                                                            ? const Center(
+                                                                child:
+                                                                    CircularProgressIndicator())
+                                                            : StockLineChart(
+                                                                timeDataList:
+                                                                    stocksController
+                                                                        .stockDetails);
+                                                      }),
+                                                    ),
+                                                  ],
                                                 ),
-                                                const SizedBox(
-                                                  height: 20,
-                                                ),
-                                                Obx(
-                                                  () => AppText(
-                                                      text: stocksController
-                                                                  .stockNews[
-                                                              "description"] ??
-                                                          '',
-                                                      fontSize: 15,
-                                                      color: Colors.white,
-                                                      height: 1.5),
-                                                ),
-                                              ],
+                                              ),
                                             ),
                                             Obx(
                                               () => SingleChildScrollView(
@@ -104,9 +128,13 @@ class StocksInvestment extends StatelessWidget {
                                                     color: subTextColor,
                                                     height: 1.5),
                                               ),
-                                            )
+                                            ),
                                           ],
                                         ),
+                                      ),
+
+                                      const SizedBox(
+                                        height: 50,
                                       ),
                                       // Page indicator
                                       Padding(

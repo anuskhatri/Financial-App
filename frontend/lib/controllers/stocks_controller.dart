@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bobhack/constants.dart';
 import 'package:bobhack/controllers/login_controller.dart';
 import 'package:bobhack/models/stocks_model.dart';
+import 'package:d_chart/commons/data_model/data_model.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 
@@ -151,5 +152,34 @@ class StocksController extends GetxController {
             isLoadingNews.value = false;
           }
         });
+  }
+
+  var stockDetails = <TimeData>[].obs;
+
+  Future<void> fetchStockGraphDetails(String ticker) async {
+    isLoading.value = true;
+    try {
+      final response = await Dio().get(
+        "https://6d86-61-246-51-230.ngrok-free.app/stock_data?ticker=${ticker.replaceAll(" ", '')}.NS",
+      );
+      if (response.statusCode == 200) {
+        final data = response.data as List<dynamic>;
+        stockDetails.value = data.map((item) {
+          return TimeData(
+            domain: DateTime.parse(item['date']),
+            measure: (item['price'] as num).toDouble(),
+          );
+        }).toList();
+
+        print(stockData);
+      } else {
+        print(
+            "Failed to load stock details. Status code: ${response.statusCode}");
+      }
+    } catch (error) {
+      print("Error fetching stock details: $error");
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

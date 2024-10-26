@@ -125,7 +125,7 @@ class ExploreFunds extends StatelessWidget {
                                         fontWeight: FontWeight.bold),
                                   ],
                                 ),
-                                const SizedBox(width: 20),
+                                const SizedBox(width: 10),
                                 Row(
                                   children: [
                                     const AppText(
@@ -138,18 +138,22 @@ class ExploreFunds extends StatelessWidget {
                                         fontWeight: FontWeight.bold),
                                   ],
                                 ),
-                                const SizedBox(width: 20),
+                                const SizedBox(width: 10),
                                 Row(
                                   children: [
                                     const AppText(
                                         text: "Return: ",
                                         color: primaryColor,
-                                        fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                        overflow: TextOverflow.ellipsis,
+                                        ),
                                     AppText(
                                         text:
                                             mutualFundsController.returns.value,
                                         color: subTextColor,
-                                        fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                        overflow: TextOverflow.ellipsis,
+                                        ),
                                   ],
                                 ),
                               ],
