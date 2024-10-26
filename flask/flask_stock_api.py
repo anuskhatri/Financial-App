@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 # Load environment variables
 load_dotenv()  
-genai.configure(api_key="AIzaSyCYKpOuJ49yeZy-RR5G1lxdow9Y3iSSp_s")
+genai.configure(api_key="")
 
 # Replace this with your tuned model's name
 tuned_model_name = "tunedModels/investmentquerytuner-axtq661rgg8t"
