@@ -1,54 +1,22 @@
-#fully working code for the flask server
-
 from flask import Flask, request, jsonify
 import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
 from decimal import Decimal, getcontext
-import redis
 import json
 from dotenv import load_dotenv
-import os 
+import os
+from datetime import datetime, timedelta
+import google.generativeai as genai
 
 app = Flask(__name__)
 
 # Load environment variables
-load_dotenv()
+load_dotenv()  
+genai.configure(api_key="AIzaSyCYKpOuJ49yeZy-RR5G1lxdow9Y3iSSp_s")
 
-# Redis connection details
-REDIS_HOST = os.getenv('REDIS_HOST')
-REDIS_PORT = int(os.getenv('REDIS_PORT'))
-REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
-
-# Initialize Redis client
-client = redis.StrictRedis(
-    host=REDIS_HOST,
-    port=REDIS_PORT,
-    password=REDIS_PASSWORD,
-    ssl=True
-)
-
-# Set decimal precision
-getcontext().prec = 28
-
-def cache_response(key, data, ttl=None):
-    """Cache the response data in Redis with an optional Time-To-Live (TTL)."""
-    json_data = json.dumps(data)
-    
-    if ttl is not None:
-        # Set cache with expiration
-        client.setex(key, ttl, json_data)
-    else:
-        # Set cache without expiration
-        client.set(key, json_data)
-
-
-def get_cached_response(key):
-    """Retrieve cached response from Redis."""
-    cached_data = client.get(key)
-    if cached_data:
-        return json.loads(cached_data)
-    return None
+# Replace this with your tuned model's name
+tuned_model_name = "tunedModels/investmentquerytuner-axtq661rgg8t"
 
 def get_stock_price(stock_names):
     stock_prices = {}
@@ -131,14 +99,6 @@ def fetch_news():
     if not stock_names:
         return jsonify({'error': 'Stock names list is empty'}), 400
 
-    # Generate a unique cache key based on stock names
-    cache_key = 'news_data_' + '_'.join(stock_names)
-    cached_response = get_cached_response(cache_key)
-
-    if cached_response:
-        print("news coming chacning")
-        return jsonify(cached_response)
-
     try:
         url = 'https://pulse.zerodha.com/'
         response = requests.get(url)
@@ -148,10 +108,10 @@ def fetch_news():
             items = soup.find_all('li', class_='box item')
             filtered_news = filter_news_by_stock(items, stock_names)
             
+            
             if not filtered_news:
                 return jsonify({'message': 'No news found for the given stock names'}), 404
             
-            cache_response(cache_key, filtered_news, ttl=1800)  # Cache the news data
             return jsonify(filtered_news)
         else:
             return jsonify({'error': f'Failed to retrieve data from URL. Status code: {response.status_code}'}), response.status_code
@@ -192,28 +152,20 @@ def fetch_stock_price():
 def fetch_portfolio():
     data = request.get_json()
     url = 'https://rapid-raptor-slightly.ngrok-free.app/api/investement/getUserstock'
+    
+    # Extract 'userauth' from the request body
+    userauth = data.get('userauth')
     headers = {
-        'userauth': request.headers.get('userauth'),
+        'userauth': userauth,
         'Content-Type': 'application/json'
     }
     
     try:
-        # Static cache key for portfolio data
-        redis_key = 'userStock:1'
-        cached_response = get_cached_response(redis_key)
+        # Make an HTTP request to fetch the stocks data
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+        stocks_data = response.json()
 
-        if cached_response:
-            print('Data from Redis')
-            stocks_data = cached_response
-        else:
-            # Data not found in Redis, make an HTTP request to fetch it
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
-            stocks_data = response.json()
-
-            # Store the fetched data in Redis for future use
-            cache_response(redis_key, stocks_data)
-        
         # Calculate investment value using the fetched data
         stocks_investment = calculate_investment_value(stocks_data)
         
@@ -221,10 +173,60 @@ def fetch_portfolio():
     
     except requests.RequestException as e:
         return jsonify({'error': f"Request failed: {str(e)}"}), 500
-    except redis.RedisError as e:
-        return jsonify({'error': f"Redis error: {str(e)}"}), 500
     except Exception as e:
         return jsonify({'error': f"An unexpected error occurred: {str(e)}"}), 500
+
+def fetch_stock_data(ticker):
+    # Calculate date range for the past 1 year
+    end_date = datetime.today()
+    start_date = end_date - timedelta(days=365)  # 365 days for 1 year
+
+    # Fetch historical data
+    stock_data = yf.download(ticker, start=start_date, end=end_date, interval='1d')
+
+    # Prepare data in array of objects format
+    history = []
+    for date, row in stock_data.iterrows():
+        history.append({
+            "date": date.strftime("%Y-%m-%d"),
+            "price": row["Close"]  # Using 'Close' as the last traded price (LTP)
+        })
+    
+    return history
+
+@app.route('/stock_data', methods=['GET'])
+def get_stock_data():
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "Ticker parameter is required"}), 400
+    
+    try:
+        stock_history = fetch_stock_data(ticker)
+        return jsonify(stock_history)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+@app.route('/mutual_fund_ai', methods=['POST'])
+def generate_response():
+    # Get the JSON data from the request
+    data = request.json
+    user_query = data.get('query')
+
+    if not user_query:
+        return jsonify({"error": "No query provided"}), 400
+
+    # Create an instance of the GenerativeModel
+    model = genai.GenerativeModel(model_name=tuned_model_name)
+
+    # Generate content using the tuned model
+    response = model.generate_content(user_query)
+
+    # Return the generated response
+    json_response = json.loads(response.text)
+    return jsonify(json_response)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
