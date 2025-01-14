@@ -16,8 +16,7 @@ async function mutualFundsGpt(userQuery) {
         role: "system",
         content: systemMessage,
       },
-      {Git add .
-
+      {
         role: "user",
         content: userQuery,
       },
