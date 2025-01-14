@@ -7,28 +7,28 @@ const overlayColor = Color(0xFF2A2A2A);
 const subTextColor = Color(0xFF989898);
 const primaryColor = Color(0xFFF26624);
 
-const String baseUrl = "https://rapid-raptor-slightly.ngrok-free.app";
-const String stockBaseUrl = "https://6d86-61-246-51-230.ngrok-free.app";
-const webSocketBaseUrl = "ws://rapid-raptor-slightly.ngrok-free.app";
+const String baseUrl = "https://pleasant-nearby-hermit.ngrok-free.app";
+const String stockBaseUrl = "https://wondrous-ray-lightly.ngrok-free.app";
+const webSocketBaseUrl = "ws://pleasant-nearby-hermit.ngrok-free.app";
 
 final formatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹ ');
 
 String displayAccountNumber(String accountNumber, {String maskChar = 'X'}) {
   // Remove any existing spaces or dashes
   String cleanedNumber = accountNumber.replaceAll(RegExp(r'[\s-]'), '');
-  
+
   // Ensure the account number has at least 4 digits
   if (cleanedNumber.length <= 4) {
     return cleanedNumber; // Return as-is if 4 or fewer digits
   }
-  
+
   // Mask all but the last 4 digits
   String maskedPart = maskChar * (cleanedNumber.length - 4);
   String lastFourDigits = cleanedNumber.substring(cleanedNumber.length - 4);
-  
+
   // Combine masked part with last 4 digits
   String maskedNumber = '$maskedPart$lastFourDigits';
-  
+
   // Insert spaces every 4 digits
   String formattedNumber = '';
   for (int i = 0; i < maskedNumber.length; i++) {
@@ -37,6 +37,6 @@ String displayAccountNumber(String accountNumber, {String maskChar = 'X'}) {
     }
     formattedNumber += maskedNumber[i];
   }
-  
+
   return formattedNumber;
 }

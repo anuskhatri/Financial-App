@@ -2,26 +2,63 @@ const { pool } = require("../../../config/dbConfig");
 const mutualFundsGpt = require("../../../utils/openAi/mutualFundsGpt");
 
 function toTitleCase(str) {
-  if (typeof str !== 'string') {
+  if (typeof str !== "string") {
     return str; // Return the input as is if not a string
   }
-  return str.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+  return str
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 }
 
 const mutualFundsPrompt = async (req, res) => {
   try {
     const { userInput } = req.params;
+
+    // Get AI-generated structured response
     const promptResult = await mutualFundsGpt(userInput);
 
-    // Directly use promptResult since it returns the structured response
-    const queryData = promptResult;
+    console.log("Prompt Result:", promptResult);
 
-    // Check if any value is 0 and return a specific message
-    if (!queryData || queryData.fund_age_yr === 0 && queryData.risk_level === 0 && queryData.returns_1yr === 0) {
-      return res.send({ message: "I am an AI tool for mutual funds, please prompt specific to mutual funds" });
+    // Ensure promptResult.message is parsed correctly from JSON string
+    let queryData = null;
+    try {
+      if (promptResult && promptResult.message) {
+        queryData = JSON.parse(promptResult.message);
+      }
+    } catch (error) {
+      console.error("Error parsing JSON from promptResult:", error);
+      return res.status(500).send({
+        message:
+          "Failed to parse the response from the AI tool. Please try again.",
+      });
     }
 
-    // Convert fund_age_yr to a string based on conditions
+    // Validate the parsed data
+    if (
+      !queryData ||
+      queryData.fund_age_yr === undefined ||
+      queryData.risk_level === undefined ||
+      queryData.returns_1yr === undefined
+    ) {
+      return res.status(400).send({
+        message:
+          "Invalid or incomplete input. Please provide mutual fund details.",
+      });
+    }
+
+    // Check if all values are 0 (for invalid input)
+    if (
+      queryData.fund_age_yr === 0 &&
+      queryData.risk_level === 0 &&
+      queryData.returns_1yr === 0
+    ) {
+      return res.status(400).send({
+        message: "Please provide valid mutual fund details.",
+      });
+    }
+
+    // Determine fund age category
     let fundAgeCategory;
     if (queryData.fund_age_yr > 6) {
       fundAgeCategory = "long-term";
@@ -31,52 +68,60 @@ const mutualFundsPrompt = async (req, res) => {
       fundAgeCategory = "short-term";
     }
 
-    // Assign the category to params
-    const params = { fund_age_yr: fundAgeCategory };
-
-    // Determine risk range
-    if (queryData.risk_level >= 1 && queryData.risk_level <= 2) {
-      params.risk_range = "Low";
-    } else if (queryData.risk_level >= 3 && queryData.risk_level <= 4) {
-      params.risk_range = "Medium";
-    } else {
-      params.risk_range = "High";
-    }
-
-    // Determine returns range
-    if (queryData.returns_1yr >= 0 && queryData.returns_1yr <= 3) {
-      params.returns_1yr = "Low";
-    } else if (queryData.returns_1yr >= 4 && queryData.returns_1yr <= 6) {
-      params.returns_1yr = "Medium";
-    } else {
-      params.returns_1yr = "High";
-    }
+    // Map risk level and returns to categories
+    const params = {
+      fund_age_yr: fundAgeCategory,
+      risk_range:
+        queryData.risk_level >= 1 && queryData.risk_level <= 2
+          ? "Low"
+          : queryData.risk_level >= 3 && queryData.risk_level <= 4
+          ? "Medium"
+          : "High",
+      returns_1yr:
+        queryData.returns_1yr >= 0 && queryData.returns_1yr <= 3
+          ? "Low"
+          : queryData.returns_1yr >= 4 && queryData.returns_1yr <= 6
+          ? "Medium"
+          : "High",
+    };
 
     // Define tolerance ranges
     const riskTolerance = 1; // Adjust tolerance as needed
     const returnsTolerance = 1; // Adjust tolerance as needed
 
+    // Log input data for debugging
+    console.log("Database Query Parameters:", {
+      fund_age_yr_start: queryData.fund_age_yr > 6 ? 7 : 0,
+      fund_age_yr_end: queryData.fund_age_yr > 6 ? 10 : 6,
+      risk_level_start: queryData.risk_level - riskTolerance,
+      risk_level_end: queryData.risk_level + riskTolerance,
+      returns_start: queryData.returns_1yr - returnsTolerance,
+      returns_end: queryData.returns_1yr + returnsTolerance,
+    });
+
     // Query the database
     const mutualData = await pool.query(
-      `SELECT * FROM mutual_funds 
-       WHERE fund_age_yr BETWEEN $1 AND $2 
-       AND risk_level BETWEEN $3 AND $4 
-       AND returns_1yr BETWEEN $5 AND $6`,
+      `
+        SELECT * FROM mutual_funds
+        WHERE fund_age_yr::integer BETWEEN $1 AND $2
+          AND risk_level::integer BETWEEN $3 AND $4
+          AND returns_1yr::integer BETWEEN $5 AND $6;
+      `,
       [
-        // Use the appropriate numeric ranges for the database query
-        queryData.fund_age_yr > 6 ? 7 : 0, // Adjust start of long-term range
-        queryData.fund_age_yr > 6 ? 10 : 6, // Adjust end of long-term range
-        queryData.risk_level - riskTolerance,
-        queryData.risk_level + riskTolerance,
-        queryData.returns_1yr - returnsTolerance,
-        queryData.returns_1yr + returnsTolerance
+        queryData.fund_age_yr > 6 ? 7 : 0, // Start of long-term range
+        queryData.fund_age_yr > 6 ? 10 : 6, // End of long-term range
+        queryData.risk_level - riskTolerance, // Lower bound of risk level
+        queryData.risk_level + riskTolerance, // Upper bound of risk level
+        queryData.returns_1yr - returnsTolerance, // Lower bound of returns
+        queryData.returns_1yr + returnsTolerance, // Upper bound of returns
       ]
     );
 
+    // Return response
     return res.send({ ...params, mutualData: mutualData.rows });
   } catch (error) {
     console.error("Error:", error);
-    res.sendStatus(500);
+    return res.status(500).send({ message: "Internal server error." });
   }
 };
 

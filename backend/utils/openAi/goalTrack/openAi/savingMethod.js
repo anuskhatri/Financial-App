@@ -1,6 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const genAI = new GoogleGenerativeAI("AIzaSyCYKpOuJ49yeZy-RR5G1lxdow9Y3iSSp_s");
+const genAI = new GoogleGenerativeAI("AIzaSyB6Iu9CN6RWvFpOEBy_2tUj4kOpJdusA80");
 
 async function getFinancialAdviceOnSavingGoal(prompt) {
   try {

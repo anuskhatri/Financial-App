@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class StockLineChart extends StatelessWidget {
   final List<TimeData> timeDataList;
 
-  StockLineChart({super.key, required this.timeDataList});
+  const StockLineChart({super.key, required this.timeDataList});
 
   @override
   Widget build(BuildContext context) {

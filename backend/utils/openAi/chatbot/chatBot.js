@@ -1,6 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const genAI = new GoogleGenerativeAI("AIzaSyCYKpOuJ49yeZy-RR5G1lxdow9Y3iSSp_s"); // Replace with your actual API key
+const genAI = new GoogleGenerativeAI("AIzaSyB6Iu9CN6RWvFpOEBy_2tUj4kOpJdusA80"); // Replace with your actual API key
 
 const getFinancialAdvice = async (prompt, data) => {
   try {
@@ -8,8 +8,14 @@ const getFinancialAdvice = async (prompt, data) => {
     const model = await genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Generate content with the provided prompt and request a concise response
-    const result = await model.generateContent(`Provide concise financial advice for: ${prompt}. Additional data: ${JSON.stringify(data)}. Currency: INR. Limit the response to a few sentences.`);
+    const result = await model.generateContent(
+      `Provide concise financial advice for: ${prompt}. Additional data: ${JSON.stringify(
+        data
+      )}. Currency: INR. Limit the response to a few sentences.`
+    );
 
+    console.log("MOdle :", model);
+    console.log("MOdle :", result);
     // Check for response candidates and clean the response text
     if (result?.response?.candidates && result.response.candidates.length > 0) {
       let responseText = result.response.candidates[0].content.parts[0].text;
@@ -28,4 +34,7 @@ const getFinancialAdvice = async (prompt, data) => {
 };
 
 // Export the function for use in other modules
-module.exports = getFinancialAdvice;
+// In chatBot.js (where you defined getFinancialAdvice)
+module.exports = {
+  getFinancialAdvice,
+};

@@ -3,20 +3,20 @@ import requests
 from bs4 import BeautifulSoup
 import yfinance as yf
 from decimal import Decimal, getcontext
-import json
 from dotenv import load_dotenv
-import os
 from datetime import datetime, timedelta
-import google.generativeai as genai
+from ollama import chat
+from pydantic import BaseModel
+
+class MutualFunds (BaseModel):
+    fund_age_yr: int
+    risk_level: int
+    returns_1yr: int
 
 app = Flask(__name__)
 
 # Load environment variables
 load_dotenv()  
-genai.configure(api_key="")
-
-# Replace this with your tuned model's name
-tuned_model_name = "tunedModels/investmentquerytuner-axtq661rgg8t"
 
 def get_stock_price(stock_names):
     stock_prices = {}
@@ -151,7 +151,7 @@ def fetch_stock_price():
 @app.route('/fetch_portfolio', methods=['POST'])
 def fetch_portfolio():
     data = request.get_json()
-    url = 'https://rapid-raptor-slightly.ngrok-free.app/api/investement/getUserstock'
+    url = 'https://pleasant-nearby-hermit.ngrok-free.app/api/investement/getUserstock'
     
     # Extract 'userauth' from the request body
     userauth = data.get('userauth')
@@ -213,20 +213,30 @@ def generate_response():
     # Get the JSON data from the request
     data = request.json
     user_query = data.get('query')
-
     if not user_query:
         return jsonify({"error": "No query provided"}), 400
 
-    # Create an instance of the GenerativeModel
-    model = genai.GenerativeModel(model_name=tuned_model_name)
+    try:
+        print(1)
+        # Create an instance of the GenerativeModel
+        response = chat(
+            model="llama3.2",
+            stream=False,
+            messages=user_query,
+            format=MutualFunds.model_json_schema()
+        )
+        print(2)
+        print(response['message']['content'])
 
-    # Generate content using the tuned model
-    response = model.generate_content(user_query)
+        
+        # Return the generated response
+        return jsonify({"message": response['message']['content']})
+    except Exception as e:
+        print(3)
+        print(e)
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
-    # Return the generated response
-    json_response = json.loads(response.text)
-    return jsonify(json_response)
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=8000)

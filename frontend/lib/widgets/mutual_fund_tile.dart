@@ -64,7 +64,7 @@ class MutualFundsTile extends StatelessWidget {
                       const SizedBox(width: 20),
                       AppText(
                         text: "Category: ${fund.category}",
-                        color: Color.fromARGB(255, 172, 172, 172),
+                        color: const Color.fromARGB(255, 172, 172, 172),
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),
@@ -73,7 +73,7 @@ class MutualFundsTile extends StatelessWidget {
                   const SizedBox(height: 5),
                   AppText(
                     text: "Size: ${fund.size}cr",
-                    color: Color.fromARGB(255, 172, 172, 172),
+                    color: const Color.fromARGB(255, 172, 172, 172),
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
